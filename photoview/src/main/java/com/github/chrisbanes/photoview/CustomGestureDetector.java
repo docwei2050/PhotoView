@@ -43,6 +43,7 @@ class CustomGestureDetector {
     CustomGestureDetector(Context context, OnGestureListener listener) {
         final ViewConfiguration configuration = ViewConfiguration
                 .get(context);
+        //获得允许执行一个fling手势动作的最小速度值
         mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();
         mTouchSlop = configuration.getScaledTouchSlop();
 
@@ -57,8 +58,7 @@ class CustomGestureDetector {
                     return false;
              
                 if (scaleFactor >= 0) {
-                    mListener.onScale(scaleFactor,
-                            detector.getFocusX(), detector.getFocusY());
+                    mListener.onScale(scaleFactor, detector.getFocusX(), detector.getFocusY());
                 }
                 return true;
             }
@@ -109,18 +109,24 @@ class CustomGestureDetector {
             return true;
         }
     }
+    //TODO 1.演示：速率的使用  用来判断是fling
+    //TODO 1.演示：速率的使用  用来判断是fling
+
 
     private boolean processTouchEvent(MotionEvent ev) {
-        final int action = ev.getAction();
-        switch (action & MotionEvent.ACTION_MASK) {
+        int multiAction=ev.getActionMasked();
+
+        //final int action = ev.getAction();
+        final int action=ev.getActionMasked();
+        switch (action) {
             case MotionEvent.ACTION_DOWN:
                 mActivePointerId = ev.getPointerId(0);
-
+               //按下的时候获取速度追踪器
                 mVelocityTracker = VelocityTracker.obtain();
                 if (null != mVelocityTracker) {
                     mVelocityTracker.addMovement(ev);
                 }
-
+                //当前index的x值
                 mLastTouchX = getActiveX(ev);
                 mLastTouchY = getActiveY(ev);
                 mIsDragging = false;
@@ -133,10 +139,12 @@ class CustomGestureDetector {
                 if (!mIsDragging) {
                     // Use Pythagoras to see if drag length is larger than
                     // touch slop
+                    //最小滑动距离 使用勾股定理
                     mIsDragging = Math.sqrt((dx * dx) + (dy * dy)) >= mTouchSlop;
                 }
 
                 if (mIsDragging) {
+                    //超过最小滑动距离，就算是拖拽
                     mListener.onDrag(dx, dy);
                     mLastTouchX = x;
                     mLastTouchY = y;
@@ -170,6 +178,7 @@ class CustomGestureDetector {
 
                         // If the velocity is greater than minVelocity, call
                         // listener
+                        //比最小的速度还大，叫表示fling
                         if (Math.max(Math.abs(vX), Math.abs(vY)) >= mMinimumVelocity) {
                             mListener.onFling(mLastTouchX, mLastTouchY, -vX,
                                     -vY);
@@ -184,11 +193,18 @@ class CustomGestureDetector {
                 }
                 break;
             case MotionEvent.ACTION_POINTER_UP:
-                final int pointerIndex = Util.getPointerIndex(ev.getAction());
+                //final int pointerIndex = Util.getPointerIndex(ev.getAction());
+                final int pointerIndex = ev.getActionIndex();
+                System.out.println("pointerIndex-----up-->"+pointerIndex+"------");
+                //拿到真是的pointerId
                 final int pointerId = ev.getPointerId(pointerIndex);
+
+                //如果 我的第1根手指（pointerId）==0；
+                System.out.println(" mActivePointerId--》"+ mActivePointerId+"-------pointerId----》"+pointerId);
                 if (pointerId == mActivePointerId) {
                     // This was our active pointer going up. Choose a new
                     // active pointer and adjust accordingly.
+                    //如果此时pointerId为0的pointerIndex不一定为0，
                     final int newPointerIndex = pointerIndex == 0 ? 1 : 0;
                     mActivePointerId = ev.getPointerId(newPointerIndex);
                     mLastTouchX = ev.getX(newPointerIndex);
@@ -197,9 +213,7 @@ class CustomGestureDetector {
                 break;
         }
 
-        mActivePointerIndex = ev
-                .findPointerIndex(mActivePointerId != INVALID_POINTER_ID ? mActivePointerId
-                        : 0);
+        mActivePointerIndex = ev.findPointerIndex(mActivePointerId != INVALID_POINTER_ID ? mActivePointerId : 0);
         return true;
     }
 }
